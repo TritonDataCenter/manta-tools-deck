@@ -9,7 +9,8 @@ Tips, Tricks, and Gotchas](http://dtrace.org/resources/bmc/dtrace_tips.pdf).
 ## Format and "build"
 
 This repository contains both source files and generated files.  To view the
-deck, just look at the generated files.  Editing the deck requires more work.
+deck, just look at the generated files in the "docs" directory.  Editing the
+deck requires more work.
 
 The "manta-tools.md" Markdown file contains the source for the talk's content.
 It's intended to be used with "reveal.js".  Unfortunately, it's not clear how to
@@ -29,7 +30,7 @@ Then:
 * Load in Chrome: `http://localhost:8000/manta-tools.htm`
 * Right-click the page and click "Save As..."
 * Navigate to the root of the clone of *this* repository and save the file as
-  type "Webpage, Complete" called "generated/index.html".
+  type "Webpage, Complete" called "docs/index.html".
 * `git add` and commit the newly-added files.
 
 Improvements to this process would be most welcome, including possibly
