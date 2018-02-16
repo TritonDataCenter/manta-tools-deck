@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<!-- saved from url=(0039)http://localhost:8000/manta-tools.htm#/ -->
+<html lang="en" class=" js no-mobile desktop no-ie chrome chrome64 root-section w-1330 gt-240 gt-320 gt-480 gt-640 gt-768 gt-800 gt-1024 gt-1280 lt-1440 lt-1680 lt-1920 no-portrait landscape gradient rgba opacity textshadow multiplebgs boxshadow borderimage borderradius cssreflections csstransforms csstransitions no-touch no-retina fontface domloaded" id="manta-tools-page"><!--
+    This file is derived from the reveal.js Markdown example.  This file is
+    intended to be served from wherever you run a "reveal.js" server.  It
+    assumes "manta-tools.md" is in the same directory.
+--><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Manta Tools</title>
+    <link rel="stylesheet" href="./index_files/reveal.css">
+    <link rel="stylesheet" href="./index_files/white.css" id="theme">
+    <link rel="stylesheet" href="./index_files/zenburn.css"><script type="text/javascript" src="./index_files/marked.js"></script><script type="text/javascript" src="./index_files/markdown.js"></script>
+</head>
+
+<body>
+    <div class="reveal slide center has-vertical-slides has-horizontal-slides ready" role="application" data-transition-speed="default" data-background-transition="fade">
+        <div class="slides" style="width: 960px; height: 700px; zoom: 1.33;">
+            <!-- Use external markdown resource, separate slides by three newlines; vertical slides by two newlines -->
+            <section data-markdown="" data-markdown-parsed="true" class="present" style="top: 257px; display: block;"><h1 id="manta-tools">Manta Tools</h1>
+<!--
+   Flesh out cut/awk/sort?
+   Perf section?
+   - Why is it slow?
+     - What is it?
+       - `svcs -p`
+       - pg_stat_activity
+     - What's it doing?
+       - On CPU? Profile it.
+       - Off CPU? Profile where it goes off CPU.
+-->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 134.5px; display: block;"><h2 id="background">Background</h2>
+<p>Manta Operator's Guide:
+<a href="https://joyent.github.io/manta">https://joyent.github.io/manta</a></p>
+<ul>
+<li>Design goals</li>
+<li>Architecture and components</li>
+<li>Ops procedures: deployment, upgrade, debugging</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 115.5px; display: block;"><h2 id="this-deck-highlights-">This deck (highlights)</h2>
+<ul>
+<li>Manta operator tools<ul>
+<li>Taking stock: <code>manta-adm show</code>, <code>manta-adm cn</code></li>
+<li>Getting around: <code>manta-login</code>, <code>manta-oneach</code></li>
+<li>And more: <code>mlive</code>, <code>manta-adm alarm</code></li>
+</ul>
+</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="this-deck-highlights-">This deck (highlights)</h2>
+<ul>
+<li>Lower-level tools:<ul>
+<li>Metadata: <code>mlocate</code></li>
+<li>Moray: <code>moray(1)</code> suite</li>
+<li>Marlin: <code>mrjob</code>, <code>mrzones</code>, <code>mrgroups</code></li>
+<li>PostgreSQL: <code>pgsqlstat</code></li>
+</ul>
+</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="this-deck-highlights-">This deck (highlights)</h2>
+<ul>
+<li>Tips, Tricks, and Gotchas (h/t DTrace)</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h1 id="manta-tools">Manta Tools</h1>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="taking-stock">Taking stock</h2>
+<ul>
+<li><code>manta-adm show [SERVICE]</code>: show zones</li>
+<li><code>manta-adm show -s</code>: count zones by shard, version</li>
+<li><code>manta-adm cn</code>: show CNs</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="list-zones-in-local-datacenter">List zones in local datacenter</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show
+SERVICE          SH ZONENAME                             GZ ADMIN IP     
+authcache         1 51ae8301-fefa-4922-9c48-93226acec1a5 172.25.3.38     
+electric-moray    1 2a689e6c-e12a-4c62-bc7c-72b7efab7eea 172.25.3.38     
+jobpuller         1 9d1ffdcd-a283-4835-8cb0-20c2fa77c134 172.25.3.38     
+jobsupervisor     1 2b1d10be-6d68-4fe8-91e5-688aeae0cae9 172.25.3.38     
+loadbalancer      1 49a3d111-c7a3-478a-9d9c-8ec85a0f64da 172.25.3.38     
+...
+moray             1 b3c6c144-7500-4904-a0b5-91997a71f75d 172.25.3.38     
+moray             2 b68396db-d49f-487a-8379-a36234ac9993 172.25.3.38     
+moray             3 69790d4a-d500-4e56-99ac-967024765805 172.25.3.38     
+nameservice       1 c6bfb16d-1c43-4fff-95be-5603870dd822 172.25.3.38     
+...
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-how-many-shards-">Tip: how many shards?</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show postgres
+SERVICE          SH ZONENAME                             GZ ADMIN IP     
+postgres          1 70d44638-f4fb-4cbd-8611-0f7c83d8502f 172.25.3.38     
+postgres          2 a5223321-600b-43eb-b66d-ebc0ab500046 172.25.3.38     
+postgres          3 ef318383-c5fb-4381-8416-a1636d8efa95 172.25.3.38     
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="list-specific-columns">List specific columns</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show \
+    -o gz_admin_ip,service,zonename,primary_ip storage
+GZ ADMIN IP      SERVICE          ZONENAME                             PRIMARY IP      
+172.25.3.39      storage          f7954cad-7e23-434f-be98-f077ca7bc4c0 172.27.3.14     
+</code></pre><ul>
+<li>See <code>manta-adm help show</code> for a list of fields you can pass to <code>-o</code>.</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="list-zones-in-all-datacenters-within-the-region">List zones in all datacenters within the region</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show -a
+SERVICE          SH DATACENTER ZONENAME                            
+authcache         1 staging-1  51ae8301-fefa-4922-9c48-93226acec1a5
+authcache         1 staging-2  8d01425c-a7d7-4373-9c05-c46b0a567ab9
+authcache         1 staging-3  46ebba2d-820f-4331-ad25-37062192e68c
+electric-moray    1 staging-1  2a689e6c-e12a-4c62-bc7c-72b7efab7eea
+electric-moray    1 staging-2  56533ef1-f79e-4406-9d2a-0b72fb2d2394
+electric-moray    1 staging-3  b6f4ec17-f7ea-4c38-b741-de88e992c5d3
+...
+</code></pre><ul>
+<li>Some information is not available about zones in other datacenters (including
+images/versions, IPs, and server info).</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="list-zones-grouped-by-compute-node">List zones grouped by compute node</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show -c
+CN RA10146    445aab6c-3048-11e3-9816-002590c3f3bc 172.25.3.39     
+     SERVICE          SH ZONENAME                            
+     marlin            1 0474da9a-21cd-4eba-a0c2-c353a14b2fbd
+...
+     storage           1 f7954cad-7e23-434f-be98-f077ca7bc4c0
+CN RA14872    aac3c402-3047-11e3-b451-002590c57864 172.25.3.38     
+     SERVICE          SH ZONENAME                            
+     authcache         1 51ae8301-fefa-4922-9c48-93226acec1a5
+     electric-moray    1 2a689e6c-e12a-4c62-bc7c-72b7efab7eea
+     jobpuller         1 9d1ffdcd-a283-4835-8cb0-20c2fa77c134
+     jobsupervisor     1 2b1d10be-6d68-4fe8-91e5-688aeae0cae9
+...
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="list-images-in-use">List images in use</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show -s
+SERVICE          SH VERSION                                    COUNT
+authcache         1 master-20171201T230631Z-gf5ad52f               1
+electric-moray    1 master-20180118T080706Z-g27c91ec               1
+jobpuller         1 master-20170920T001026Z-g95b5f73               1
+jobsupervisor     1 master-20170919T234226Z-gb8af6a8               1
+loadbalancer      1 master-20180111T211740Z-ga9c40a1               1
+marlin            1 master/13.3.6                                 32
+medusa            1 master-20170919T234916Z-g7b01c12               1
+moray             1 master-20180118T075404Z-g76db9a2               1
+moray             2 master-20180118T075404Z-g76db9a2               1
+moray             3 master-20180118T075404Z-g76db9a2               1
+nameservice       1 master-20171215T001927Z-g5958142               1
+...
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-mapping-zonenames-to-storage-ids">Tip: Mapping zonenames to storage ids</h3>
+<ul>
+<li><p>Local datacenter:</p>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show -o zonename,storage_id storage
+ZONENAME                             STORAGE ID                
+f7954cad-7e23-434f-be98-f077ca7bc4c0 1.stor.staging.joyent.us  
+</code></pre></li>
+<li><p>Whole region:</p>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm show -a -o zonename,storage_id storage
+ZONENAME                             STORAGE ID                
+f7954cad-7e23-434f-be98-f077ca7bc4c0 1.stor.staging.joyent.us  
+12fa9eea-ba7a-4d55-abd9-d32c64ae1965 2.stor.staging.joyent.us  
+6dbfb615-b1ac-4f9a-8006-2cb45b87e4cb 3.stor.staging.joyent.us  
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-manta-adm-cn-"><code>manta-adm cn</code></h3>
+<p>Show various information about servers.</p>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="list-compute-nodes">List compute nodes</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm cn
+DC        HOST              ADMIN IP         KIND   
+staging-1 RA14872           172.25.3.38      other  
+staging-1 RA10146           172.25.3.39      storage
+</code></pre><p>See also: <code>-o</code> option for specific fields</p>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-mapping-cns-to-compute-ids">Tip: Mapping CNs to compute ids</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm cn -o host,compute_id
+HOST              COMPUTE ID              
+RA14872           -                       
+RA10146           1.cn.staging.joyent.us  
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-mapping-cns-to-storage-ids">Tip: Mapping CNs to storage ids</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-adm cn -o host,storage_ids
+HOST              STORAGE IDS               
+RA14872           -                         
+RA10146           1.stor.staging.joyent.us  
+</code></pre><ul>
+<li>Gotcha: it's <code>storage_ids</code>, not <code>storage_id</code>.  There may be more than one!
+(Generally only in dev.)</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="what-s-broken">What's broken</h3>
+<ul>
+<li>See <code>manta-adm alarm</code></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-manta-adm-alarm-"><code>manta-adm alarm</code></h3>
+<!-- XXX manta-adm alarm -->
+</section><section hidden="" aria-hidden="true" class="stack future" style="top: 350px; display: none;"><section data-markdown="" data-markdown-parsed="true" style="top: 350px; display: none;"><h3 id="loads-more-details">Loads more details</h3>
+<pre><code>man manta-adm
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" class="future" aria-hidden="true" style="top: 350px; display: none;"><h2 id="-manta-login-"><code>manta-login</code></h2>
+<ul>
+<li><p>Log into zone 586053f4-bd49-44bf-bf3e-56436bc0a0ce:</p>
+<pre><code>manta-login 586053f4-bd49-44bf-bf3e-56436bc0a0ce
+</code></pre></li>
+<li><p>Opens a shell in a specific zone (using <code>ssh</code> and <code>zlogin</code>).</p>
+</li>
+<li>Tip: Argument can be any substring of the zone uuid.</li>
+<li>Tip: If there's more than one match, you'll get a list to pick from.</li>
+</ul>
+</section></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-manta-login-service-which-"><code>manta-login SERVICE [WHICH]</code></h3>
+<ul>
+<li><p>Show a list of "jobsupervisor" zones from which to pick:</p>
+<pre><code>manta-login jobsupervisor
+</code></pre></li>
+<li><p>Log into the first "postgres" zone (generally part of shard 1):</p>
+<pre><code>manta-login postgres 0
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-manta-login-numbering"><code>manta-login</code> numbering</h3>
+<ul>
+<li><p>Gotcha: shards numbered from 1, but <code>manta-login</code> options numbered from 0:</p>
+<pre><code>[root@headnode (staging-1) ~]# manta-login postgres
+0:   postgres          1 70d44638-f4fb-4cbd-8611-0f7c83d8502f 172.25.3.38     
+1:   postgres          2 a5223321-600b-43eb-b66d-ebc0ab500046 172.25.3.38     
+2:   postgres          3 ef318383-c5fb-4381-8416-a1636d8efa95 172.25.3.38     
+Choose a number: 
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-manta-login-matching"><code>manta-login</code> matching</h3>
+<ul>
+<li><p>Gotcha: "moray" matches both "electric-moray" and "moray"</p>
+<pre><code>[root@headnode (staging-1) ~]# manta-login moray
+0:   electric-moray    1 2a689e6c-e12a-4c62-bc7c-72b7efab7eea 172.25.3.38     
+1:   moray             1 b3c6c144-7500-4904-a0b5-91997a71f75d 172.25.3.38     
+2:   moray             2 b68396db-d49f-487a-8379-a36234ac9993 172.25.3.38     
+3:   moray             3 69790d4a-d500-4e56-99ac-967024765805 172.25.3.38     
+Choose a number: 
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-manta-login-g-"><code>manta-login -G</code></h3>
+<ul>
+<li>With <code>-G</code>, opens a shell in the global zone of the server hosting the matching
+zone.</li>
+<li><p>Useful for looking at system-wide stats and DTrace probes.</p>
+</li>
+<li><p>Log into the GZ of the shard 1 postgres:</p>
+<pre><code>manta-login -G postgres 0
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="more-details">More details</h3>
+<pre><code>man manta-login
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-manta-oneach-"><code>manta-oneach</code></h2>
+<ul>
+<li><code>manta-login</code> is great for test systems and making one-off observations and
+tweaks</li>
+<li>In production, <code>manta-oneach</code> is needed for <em>ad hoc</em> changes or data
+collection</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="be-careful-">Be careful!</h2>
+<p><strong><code>manta-oneach</code> is a very sharp tool!</strong></p>
+<p>(See: accidental whole-datacenter reboot.)
+<!-- XXX link to postmortem --></p>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="example-restart-all-jobsupervisors">Example: restart all jobsupervisors</h3>
+<pre><code>[root@headnode (emy-10) ~]# manta-oneach -s jobsupervisor \
+    'svcadm restart jobsupervisor'
+SERVICE          ZONE     OUTPUT
+jobsupervisor    2a74b4a2 
+jobsupervisor    d8800db3 
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="example-restart-all-marlin-agents">Example: restart all Marlin agents</h3>
+<pre><code>[root@headnode (emy-10) ~]# manta-oneach -G -s storage \
+    'svcadm restart marlin-agent'
+HOSTNAME              OUTPUT
+headnode              
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-tabular-output">Tip: tabular output</h3>
+<ul>
+<li>By default: if all results are one line, show a table.</li>
+<li>Force table (using only the last line of output) with <code>-N</code></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="example-sample-muskie-logs-for-recent-errors">Example: sample Muskie logs for recent errors</h3>
+<pre><code>[root@headnode (emy-10) ~]#     manta-oneach -s webapi \
+    'tail -n 100 /var/log/muskie.log | grep -c "handled: 5"'
+SERVICE          ZONE     OUTPUT
+webapi           1aab0a8f 0
+webapi           2004385c 0
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="example-fetch-zfs-storage-used">Example: fetch ZFS storage used</h3>
+<pre><code>[root@headnode (staging-1) ~]# manta-oneach -s postgres \
+    -N 'zfs list -o used'
+SERVICE          ZONE     OUTPUT
+postgres         70d44638 8.27G
+postgres         a5223321 11.5G
+postgres         ef318383 11.5G
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="bonus-tip-skip-header-row">Bonus tip: skip header row</h3>
+<ul>
+<li>Many commands support <code>-H</code> to skip the header row</li>
+<li><p>List status of loadbalancer haproxy instances:</p>
+<pre><code>[root@headnode (emy-10) ~]# manta-oneach -s loadbalancer \
+    'svcs -H haproxy'
+SERVICE          ZONE     OUTPUT
+loadbalancer     4409d3c7 online         Nov_25   svc:/manta/haproxy:default
+loadbalancer     d5d07015 online         Nov_19   svc:/manta/haproxy:default
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="bonus-tip-select-fields-">Bonus tip: select fields:</h3>
+<ul>
+<li>Many commands support <code>-o</code> to select columns</li>
+<li><p>More concise than the last one:</p>
+<pre><code>[root@headnode (emy-10) ~]#       manta-oneach -s loadbalancer \
+    'svcs -H -o state haproxy'
+SERVICE          ZONE     OUTPUT
+loadbalancer     4409d3c7 online
+loadbalancer     d5d07015 online
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="file-transfers">File transfers</h3>
+<ul>
+<li><p>Distribute a tracing script:</p>
+<pre><code>manta-oneach -s postgres -d /root -g $PWD/trace_10s.d
+manta-oneach -s postgres 'chmod +x /root/trace_10s.d'
+</code></pre></li>
+<li><p>Trace for a while (make sure this script exits!):</p>
+<pre><code>manta-oneach -s postgres '/root/trace_10s.d`
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="file-transfers-2-">File transfers (2)</h3>
+<ul>
+<li><p>Collect files:</p>
+<pre><code>manta-oneach -s postgres -d $PWD -p /var/tmp/data.out
+</code></pre></li>
+<li><p>Puts one file from each zone into the current directory, named by the zone
+uuid.</p>
+</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-concurrency">Tip: concurrency</h3>
+<ul>
+<li>Default concurrency: up to 30 at a time</li>
+<li>Can adjust this with <code>--concurrency=N</code></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-immediate-output">Tip: immediate output</h3>
+<ul>
+<li>By default, waits for all results before printing anything.</li>
+<li>Use <code>-I</code> to get results immediately.</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="trick-staggered-restarts">Trick: staggered restarts</h3>
+<p>Restart loadbalancers a few seconds apart:</p>
+<pre><code>manta-oneach -I --concurrency=1 -s loadbalancer \
+    'sleep 5; date; svcadm restart haproxy'
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="gotcha-timeouts-and-processes">Gotcha: timeouts and processes</h3>
+<ul>
+<li>Default: 60-second execution timeout (override with <code>-T NSECONDS</code> —
+especially useful when a server is down).</li>
+<li><strong>Processes are never cleaned up automatically!</strong></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="gotcha-timeout-leaves-process-running">Gotcha: timeout leaves process running</h3>
+<!-- XXX example -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="gotcha-processes-left-running">Gotcha: processes left running</h3>
+<ul>
+<li>Make sure all processes will exit on their own (or at least that you can kill
+them easily with another invocation)</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="tip-long-running-scripts">Tip: long-running scripts</h3>
+<ul>
+<li>For long-running tracing scripts, name them with a ticket number (e.g.,
+<code>MANTA-1234.d</code>)</li>
+<li><p>Can use:</p>
+<pre><code>manta-oneach ... 'pkill MANTA-1234.d'
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="wanted-manta-oneach-improvements">wanted: <code>manta-oneach</code> improvements</h3>
+<ul>
+<li><p>Select only zones for shard N with <code>--shard</code>:</p>
+<pre><code>manta-oneach -s postgres --shard=14 'manatee-adm show'
+</code></pre></li>
+<li><p>Select only primaries, syncs, asyncs, etc.:</p>
+<pre><code>manta-oneach --manatee-role=primary \
+    'pgrep -U postgres | wc -l'
+</code></pre></li>
+<li><p>Option for <code>-G</code> that invokes the command once for each matching instance,
+providing zonename — e.g.,</p>
+<pre><code>manta-oneach -G --for-each \
+    -s storage 'vmadm get $ZONENAME`
+</code></pre></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="wanted-manta-login-improvements">wanted: <code>manta-login</code> improvements</h3>
+<ul>
+<li>Same flags as <code>manta-oneach</code> has: <code>--service</code></li>
+<li>The goodies on the previous slide</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="more-details">More details</h3>
+<pre><code>man manta-login
+</code></pre></section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-mlive-"><code>mlive</code></h2>
+<ul>
+<li>Very primitive load generator</li>
+<li>("is it up?")</li>
+<li><a href="https://github.com/joyent/manta-mlive">https://github.com/joyent/manta-mlive</a></li>
+<li>Download and run from SmartOS zone (or Macbook, for flaky results)</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="first-time-for-a-region">First time for a region</h3>
+<ul>
+<li>Use <code>-s N</code> to specify number of shards (used — dubiously — to try
+to create enough different directories to hit every shard)</li>
+</ul>
+<!-- XXX `mlive` output -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="subsequent-times">Subsequent times</h3>
+<ul>
+<li>Use <code>-S</code> to skip re-creating the whole directory tree</li>
+<li>If you use this when you haven't created it before (or created it with a
+different number of shards), you'll see false positives!</li>
+</ul>
+<!-- XXX `mlive output` -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="broken">Broken</h3>
+<!-- XXX `mlive output`, broken -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h1 id="internal-debugging-tools">Internal debugging tools</h1>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-mlocate-"><code>mlocate</code></h2>
+<ul>
+<li>Shows object metadata<ul>
+<li>Creator, owner, size, user headers</li>
+<li>Which metadata shard it's on</li>
+<li>Which sharks store copies of the object</li>
+</ul>
+</li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h3 id="-mlocate-output"><code>mlocate</code> output</h3>
+<!-- mlocate output, labeled -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-mrjob-"><code>mrjob</code></h2>
+<!-- XXX example -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-moray-tools-"><code>moray tools</code></h2>
+<!-- XXX flesh out -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-pgsqlstat-"><code>pgsqlstat</code></h2>
+<!-- XXX flesh out -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h2 id="-moraystat-d-"><code>moraystat.d</code></h2>
+<!-- XXX flesh out -->
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h1 id="os-tools">OS Tools</h1>
+<ul>
+<li><code>svcs(1)</code> (SMF services)</li>
+<li><code>proc(1)</code> ("ptools")</li>
+<li><code>netstat(1)</code> (net connections)</li>
+<li><code>netstat(1)</code> -s (net stats)</li>
+<li><code>zonememstat(1M)</code> (memory limits)</li>
+<li><code>vfsstat(1M)</code> (filesystem ops)</li>
+<li><code>prstat(1M)</code> (process activity)</li>
+<li><code>mpstat(1M)</code> (CPU activity)</li>
+<li><code>iostat(1M)</code> (disk activity)</li>
+<li><code>dtrace(1M)</code></li>
+<li><code>mdb(1M)</code>, <code>mdb_v8</code></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h1 id="worth-learning">Worth learning</h1>
+<ul>
+<li><code>grep -c</code> to just report a count</li>
+<li><code>cut</code> or <code>awk</code> syntax to pull out specific fields</li>
+<li><code>sort</code> options (sort by various columns, numeric sort, <code>--debug</code> on GNU)</li>
+<li><code>sort | uniq -c</code>: frequency count, sorted by value</li>
+<li><code>sort | uniq -c | sort -n</code>: frequency count, sorted by count</li>
+<li>OS X: <code>pbcopy</code>, <code>pbpaste</code></li>
+<li><code>json(1)</code>, <code>bunyan(1)</code></li>
+</ul>
+</section><section data-markdown="" data-markdown-parsed="true" hidden="" aria-hidden="true" class="future" style="top: 350px; display: none;"><h1 id="next-steps">Next steps</h1>
+<ul>
+<li>Set up your own Manta</li>
+<li>Poke around with these tools</li>
+<li>Watch it with mlive</li>
+<li>Break it!</li>
+</ul>
+</section>
+        </div>
+    <div class="backgrounds"><div class="slide-background present" data-loaded="true" style="display: block;"></div><div class="slide-background future" data-loaded="true" style="display: block;"></div><div class="slide-background future" data-loaded="true" style="display: block;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background stack future" style="display: none;"><div class="slide-background present" style="display: none;"></div><div class="slide-background future" style="display: none;"></div></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div><div class="slide-background future" style="display: none;"></div></div><div class="progress" style="display: block;"><span style="width: 0px;"></span></div><aside class="controls" data-controls-layout="bottom-right" data-controls-back-arrows="faded" style="display: block;"><button class="navigate-left" aria-label="previous slide" disabled="disabled"><div class="controls-arrow"></div></button><button class="navigate-right enabled highlight" aria-label="next slide"><div class="controls-arrow"></div></button><button class="navigate-up" aria-label="above slide" disabled="disabled"><div class="controls-arrow"></div></button><button class="navigate-down" aria-label="below slide" disabled="disabled"><div class="controls-arrow"></div></button></aside><div class="slide-number" style="display: none;"></div><div class="speaker-notes" data-prevent-swipe="" tabindex="0"></div><div class="pause-overlay"></div><div id="aria-status-div" aria-live="polite" aria-atomic="true" style="position: absolute; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px);">Manta Tools
+
+</div></div>
+
+    <script src="./index_files/head.min.js"></script>
+    <script src="./index_files/reveal.js"></script>
+    <script>
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            history: true,
+            center: true,
+
+            // Optional libraries used to extend on reveal.js
+            dependencies: [
+                { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+            ]
+        });
+    </script>
+<script src="./index_files/livereload.js" async="" defer=""></script>
+
+</body></html>
