@@ -5,6 +5,9 @@ It's inspired by Trent Mick's [Some Tools I
 Use](https://github.com/trentm/talk-some-tools-i-use) and [Advanced DTrace:
 Tips, Tricks, and Gotchas](http://dtrace.org/resources/bmc/dtrace_tips.pdf).
 
+You can view the current version of this deck at
+https://joyent.github.io/manta-tools-deck/.
+
 
 ## Format and "build"
 
