@@ -347,6 +347,7 @@ man manta-login
 **`manta-oneach` is a very sharp tool!**
 
 (See: accidental whole-datacenter reboot.)
+
 https://www.tritondatacenter.com/blog/postmortem-for-outage-of-us-east-1-may-27-2014
 
 
@@ -384,7 +385,7 @@ headnode
 ### Example: sample Muskie logs for recent errors
 
 ```bash
-[root@headnode (emy-10) ~]#     manta-oneach -s webapi \
+[root@headnode (emy-10) ~]# manta-oneach -s webapi \
     'tail -n 100 /var/log/muskie.log | grep -c "handled: 5"'
 SERVICE          ZONE     OUTPUT
 webapi           1aab0a8f 0
@@ -413,7 +414,7 @@ postgres         ef318383 11.5G
 
 ```bash
 [root@headnode (emy-10) ~]# manta-oneach -s loadbalancer \
-  'svcs -H haproxy'
+    'svcs -H haproxy'
 SERVICE          ZONE     OUTPUT
 loadbalancer     4409d3c7 online         Nov_25   svc:/manta/haproxy:default
 loadbalancer     d5d07015 online         Nov_19   svc:/manta/haproxy:default
@@ -427,8 +428,8 @@ loadbalancer     d5d07015 online         Nov_19   svc:/manta/haproxy:default
 * More concise than the last one:
 
 ```bash
-[root@headnode (emy-10) ~]#       manta-oneach -s loadbalancer \
-  'svcs -H -o state haproxy'
+[root@headnode (emy-10) ~]# manta-oneach -s loadbalancer \
+    'svcs -H -o state haproxy'
 SERVICE          ZONE     OUTPUT
 loadbalancer     4409d3c7 online
 loadbalancer     d5d07015 online
@@ -536,7 +537,7 @@ manta-oneach -s postgres --shard=14 'manatee-adm show'
 
 ```bash
 manta-oneach --manatee-role=primary \
-  'pgrep -U postgres | wc -l'
+    'pgrep -U postgres | wc -l'
 ```
 
 * Option for `-G` that invokes the command once for each matching instance,
@@ -544,7 +545,7 @@ manta-oneach --manatee-role=primary \
 
 ```bash
 manta-oneach -G --for-each \
-  -s storage 'vmadm get $ZONENAME`
+    -s storage 'vmadm get $ZONENAME`
 ```
 
 
