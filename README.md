@@ -8,7 +8,7 @@ Tips, Tricks, and Gotchas](http://dtrace.org/resources/bmc/dtrace_tips.pdf).
 **This deck is still pretty rough.**
 
 You can view the current version of this deck at
-https://joyent.github.io/manta-tools-deck/.
+https://tritondatacenter.github.io/manta-tools-deck/.
 
 
 ## Format and "build"
@@ -25,14 +25,14 @@ to generate the sources here today.  From the root of a clone of this repo:
     $ git clone https://github.com/hakimel/reveal.js deps-reveal.js
     ...
     $ cd deps-reveal.js/
-    $ git checkout 3.6.0
+    $ git checkout 5.2.1
     $ npm install
-    $ cp ../manta-tools.htm ../manta-tools.md .
+    $ cp ../manta-tools.html ../manta-tools.md .
     $ npm start
 
 Then:
 
-* Load in Chrome: `http://localhost:8000/manta-tools.htm`
+* Load in Chrome: `http://localhost:8000/manta-tools.html`
 * Right-click the page and click "Save As..."
 * Navigate to the root of the clone of *this* repository and save the file as
   type "Webpage, Complete" called "docs/index.html".
